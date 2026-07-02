@@ -4,16 +4,7 @@ from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 from config import Config
 
-from Backend.admin.login import login_bp
-from Backend.admin.dashboard import dashboard_bp
-from Backend.admin.profiles import profiles_bp
-from Backend.admin.akun import akun_bp
-from Backend.admin.experience import experience_bp
-from Backend.admin.projects import projects_bp
-from Backend.admin.skills import skills_bp
-from Backend.admin.upload import upload_bp
-from Backend.utama.utama import utama_bp
-from Backend.profil.profil import profil_bp
+# Import blueprints inside create_app() to avoid import-time crashes in serverless
 
 
 def create_app():
@@ -38,16 +29,35 @@ def create_app():
 
     CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
-    app.register_blueprint(login_bp, url_prefix='/api')
-    app.register_blueprint(dashboard_bp, url_prefix='/api')
-    app.register_blueprint(profiles_bp, url_prefix='/api')
-    app.register_blueprint(akun_bp, url_prefix='/api')
-    app.register_blueprint(experience_bp, url_prefix='/api')
-    app.register_blueprint(projects_bp, url_prefix='/api')
-    app.register_blueprint(skills_bp, url_prefix='/api')
-    app.register_blueprint(upload_bp, url_prefix='/api')
-    app.register_blueprint(utama_bp, url_prefix='/api')
-    app.register_blueprint(profil_bp, url_prefix='/api')
+    # register blueprints with guarded imports so an import error doesn't crash app
+    def try_register(module_path, bp_name='bp'):
+        try:
+            module = __import__(module_path, fromlist=['*'])
+            bp = getattr(module, bp_name, None)
+            if bp is None:
+                app.logger.warning(f"Module {module_path} imported but blueprint '{bp_name}' not found")
+                return False
+            app.register_blueprint(bp, url_prefix='/api')
+            return True
+        except Exception as exc:
+            app.logger.exception(f"Failed to import/register {module_path}: {exc}")
+            # create a placeholder route to indicate the feature is unavailable
+            route_base = '/api'
+            @app.route(f"{route_base}/{module_path.replace('.', '/')}")
+            def _bp_unavailable():
+                return jsonify({'error': f'Module {module_path} unavailable'}), 503
+            return False
+
+    try_register('Backend.admin.login', 'login_bp')
+    try_register('Backend.admin.dashboard', 'dashboard_bp')
+    try_register('Backend.admin.profiles', 'profiles_bp')
+    try_register('Backend.admin.akun', 'akun_bp')
+    try_register('Backend.admin.experience', 'experience_bp')
+    try_register('Backend.admin.projects', 'projects_bp')
+    try_register('Backend.admin.skills', 'skills_bp')
+    try_register('Backend.admin.upload', 'upload_bp')
+    try_register('Backend.utama.utama', 'utama_bp')
+    try_register('Backend.profil.profil', 'profil_bp')
 
     @app.route('/')
     def index():
