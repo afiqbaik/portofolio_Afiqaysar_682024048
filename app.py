@@ -81,6 +81,17 @@ def create_app():
     def internal_error(error):
         return jsonify({'success': False, 'error': 'Terjadi kesalahan pada server'}), 500
 
+    @app.route('/api/health', methods=['GET'])
+    def health_check():
+        # Report presence of critical configuration without exposing secrets
+        cfg = {
+            'db_configured': bool(Config.DB_USER and Config.DB_PASSWORD),
+            'cloudinary_configured': bool(Config.CLOUDINARY_CLOUD_NAME and Config.CLOUDINARY_API_KEY and Config.CLOUDINARY_API_SECRET),
+            'jwt_configured': bool(Config.JWT_SECRET_KEY),
+            'upload_folder': app.config.get('UPLOAD_FOLDER')
+        }
+        return jsonify({'ok': True, 'config': cfg}), 200
+
     return app
 
 
