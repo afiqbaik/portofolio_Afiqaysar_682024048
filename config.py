@@ -1,6 +1,8 @@
 import os
 from urllib.parse import urlparse
 from dotenv import load_dotenv
+import base64
+import tempfile
 
 load_dotenv()
 
@@ -41,6 +43,8 @@ class Config:
         'user': DB_USER,
         'password': DB_PASSWORD,
         'database': DB_NAME,
+        # SSL options. TiDB Cloud (serverless) requires secure connections; prefer
+        # providing a CA certificate via DB_CA_PATH or DB_CA_B64 environment variable.
         'ssl_disabled': False,
         'ssl_verify_cert': True,
         'ssl_verify_identity': True,
@@ -48,6 +52,26 @@ class Config:
         'charset': 'utf8mb4',
         'connection_timeout': 10,
     }
+
+    # Support providing CA certificate through environment. Two supported methods:
+    # - DB_CA_PATH: path to CA pem file (if available in the environment)
+    # - DB_CA_B64: base64-encoded CA PEM content (useful for serverless envs like Vercel)
+    db_ca_path = os.getenv('DB_CA_PATH', '').strip()
+    db_ca_b64 = os.getenv('DB_CA_B64', '').strip()
+    if db_ca_path:
+        MYSQL_CONFIG['ssl_ca'] = db_ca_path
+    elif db_ca_b64:
+        try:
+            ca_bytes = base64.b64decode(db_ca_b64)
+            tmp_dir = os.getenv('TMPDIR') or tempfile.gettempdir()
+            ca_file = os.path.join(tmp_dir, 'tidb_ca.pem')
+            with open(ca_file, 'wb') as f:
+                f.write(ca_bytes)
+            MYSQL_CONFIG['ssl_ca'] = ca_file
+        except Exception:
+            # If CA extraction fails, leave ssl_ca unset; connection code will log
+            # and handle the error.
+            pass
 
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', SECRET_KEY)

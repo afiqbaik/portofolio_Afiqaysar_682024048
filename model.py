@@ -40,22 +40,22 @@ class Database:
             err_str = str(e)
             logger.exception("Failed to create DB pool: %s", e)
 
-            # Detect SSL_CTX_set_default_verify_paths error (no CA paths in environment)
+            # If SSL verification failed because default CA paths are missing,
+            # it's likely the serverless environment has no system CA bundle.
+            # In that case the correct fix is to provide the server CA via
+            # `DB_CA_PATH` or `DB_CA_B64` (base64 PEM) so the connector can
+            # verify the server certificate. Do NOT fall back to disabling SSL
+            # because TiDB Cloud prohibits insecure transport.
             if 'SSL_CTX_set_default_verify_paths' in err_str or '2026' in err_str:
-                logger.warning("DB pool creation failed due to SSL verify paths; retrying with SSL disabled")
-                try:
-                    # mutate config to disable ssl and retry once
-                    Config.MYSQL_CONFIG['ssl_disabled'] = True
-                    self._pool = pooling.MySQLConnectionPool(
-                        pool_name="portfolio_pool",
-                        pool_size=5,
-                        pool_reset_session=True,
-                        **Config.MYSQL_CONFIG
-                    )
-                    self.ensure_schema()
-                    return
-                except Exception as e2:
-                    logger.exception("Retry without SSL also failed: %s", e2)
+                if Config.MYSQL_CONFIG.get('ssl_ca'):
+                    # ssl_ca present but still failing; log and fail the pool
+                    logger.error("ssl_ca provided but SSL verify failed. Ensure CA is correct and accessible: %s", Config.MYSQL_CONFIG.get('ssl_ca'))
+                else:
+                    logger.error("No CA configured for TLS. Set DB_CA_PATH or DB_CA_B64 to the TiDB server CA, see https://docs.pingcap.com/tidbcloud/secure-connections-to-serverless-tier-clusters")
+
+            # If the server rejects insecure transport (1105), it means SSL is required.
+            if 'Connections using insecure transport are prohibited' in err_str or '1105' in err_str:
+                logger.error("Remote server requires secure TLS connections. Provide the cluster CA cert via DB_CA_PATH or DB_CA_B64.")
 
             # final fallback - set pool to None to avoid crashing the app
             self._pool = None
