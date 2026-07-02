@@ -1,4 +1,5 @@
 import os
+import tempfile
 from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 from config import Config
@@ -18,8 +19,22 @@ from Backend.profil.profil import profil_bp
 def create_app():
     app = Flask(__name__, static_folder='Frontend', template_folder='.')
     app.config.from_object(Config)
-    app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    # attempt to create configured upload folder; fallback to system temp if not possible
+    try:
+        app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    except Exception as e:
+        temp_dir = os.path.join(tempfile.gettempdir(), 'uploads')
+        try:
+            os.makedirs(temp_dir, exist_ok=True)
+            app.config['UPLOAD_FOLDER'] = temp_dir
+            app.logger.warning(f"Configured UPLOAD_FOLDER unavailable; using temp folder: {temp_dir} ({e})")
+        except Exception:
+            # as a last resort use current working directory path (read-only environments still may fail)
+            fallback = os.path.join(os.getcwd(), 'uploads')
+            os.makedirs(fallback, exist_ok=True)
+            app.config['UPLOAD_FOLDER'] = fallback
+            app.logger.warning(f"Upload folder fallback used: {fallback}")
 
     CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 

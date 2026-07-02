@@ -20,6 +20,13 @@ class Database:
 
     def __init__(self):
         if self._pool is None:
+            if not Config.DB_USER:
+                logger.warning("Database credentials are not configured; skipping pool creation")
+                return
+            self._create_pool()
+
+    def _create_pool(self):
+        try:
             self._pool = pooling.MySQLConnectionPool(
                 pool_name="portfolio_pool",
                 pool_size=5,
@@ -27,12 +34,24 @@ class Database:
                 **Config.MYSQL_CONFIG
             )
             self.ensure_schema()
+        except Exception as e:
+            logger.exception("Failed to create DB pool: %s", e)
+            self._pool = None
 
     def get_connection(self):
+        if self._pool is None:
+            # try to create pool on-demand if credentials exist
+            if not Config.DB_USER:
+                raise RuntimeError("Database is not configured in this environment")
+            self._create_pool()
+            if self._pool is None:
+                raise RuntimeError("Database pool unavailable")
         return self._pool.get_connection()
 
     def execute_query(self, query, params=None, fetch=False):
         start_time = time.time()
+        if self._pool is None:
+            raise RuntimeError("Database not available")
         conn = self.get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
