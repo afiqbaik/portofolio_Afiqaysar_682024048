@@ -26,6 +26,7 @@ class Database:
             self._create_pool()
 
     def _create_pool(self):
+        # Try creating pool; on SSL verify-path errors, retry with SSL disabled
         try:
             self._pool = pooling.MySQLConnectionPool(
                 pool_name="portfolio_pool",
@@ -34,8 +35,29 @@ class Database:
                 **Config.MYSQL_CONFIG
             )
             self.ensure_schema()
+            return
         except Exception as e:
+            err_str = str(e)
             logger.exception("Failed to create DB pool: %s", e)
+
+            # Detect SSL_CTX_set_default_verify_paths error (no CA paths in environment)
+            if 'SSL_CTX_set_default_verify_paths' in err_str or '2026' in err_str:
+                logger.warning("DB pool creation failed due to SSL verify paths; retrying with SSL disabled")
+                try:
+                    # mutate config to disable ssl and retry once
+                    Config.MYSQL_CONFIG['ssl_disabled'] = True
+                    self._pool = pooling.MySQLConnectionPool(
+                        pool_name="portfolio_pool",
+                        pool_size=5,
+                        pool_reset_session=True,
+                        **Config.MYSQL_CONFIG
+                    )
+                    self.ensure_schema()
+                    return
+                except Exception as e2:
+                    logger.exception("Retry without SSL also failed: %s", e2)
+
+            # final fallback - set pool to None to avoid crashing the app
             self._pool = None
 
     def get_connection(self):
