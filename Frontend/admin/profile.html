@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile | Portfolio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/palette.css" />
+  </head>
+  <body>
+    <div class="admin-shell">
+      <aside class="sidebar">
+        <div class="brand"><div class="brand-badge">AF</div><span style="font-weight:700;">Afiq Admin</span></div>
+        <nav>
+          <a class="nav-item" href="./dashboard.html"><i class="fa-solid fa-table-columns"></i><span>Dashboard</span></a>
+          <a class="nav-item active" href="./profile.html"><i class="fa-solid fa-user"></i><span>Profile</span></a>
+          <a class="nav-item" href="./experience.html"><i class="fa-solid fa-briefcase"></i><span>Experience</span></a>
+          <a class="nav-item" href="./projects.html"><i class="fa-solid fa-diagram-project"></i><span>Projects</span></a>
+          <a class="nav-item" href="./skills.html"><i class="fa-solid fa-star"></i><span>Skills</span></a>
+        </nav>
+      </aside>
+      <div class="main">
+        <header class="header"><div class="title-group"><h1>Profile</h1><p>Update the public profile information</p></div><div class="header-actions"><div class="avatar-chip"><i class="fa-solid fa-user"></i><span id="userName">Admin</span></div><button class="btn btn-secondary" id="logoutBtn">Logout</button></div></header>
+        <main class="content">
+          <div class="card">
+            <form id="profileForm">
+              <div class="grid grid-2">
+                <div class="form-group"><label class="label">Full Name</label><input class="input" id="nama_lengkap" /></div>
+                <div class="form-group"><label class="label">Preferred Name</label><input class="input" id="nama_panggilan" /></div>
+                <div class="form-group"><label class="label">Place of Birth</label><input class="input" id="tempat_lahir" /></div>
+                <div class="form-group"><label class="label">Date of Birth</label><input class="input" id="tanggal_lahir" type="date" /></div>
+                <div class="form-group"><label class="label">Email</label><input class="input" id="email" /></div>
+                <div class="form-group"><label class="label">Phone</label><input class="input" id="telepon" /></div>
+                <div class="form-group"><label class="label">University</label><input class="input" id="universitas" /></div>
+                <div class="form-group"><label class="label">Faculty</label><input class="input" id="fakultas" /></div>
+                <div class="form-group"><label class="label">Program</label><input class="input" id="prodi" /></div>
+                <div class="form-group"><label class="label">Semester</label><input class="input" id="semester" /></div>
+                <div class="form-group"><label class="label">Address</label><textarea class="textarea" id="alamat"></textarea></div>
+                <div class="form-group">
+                  <label class="label">Profile Photo</label>
+                  <div class="image-upload">
+                    <div class="profile-photo-preview" id="photoPreview">
+                      <img id="photoPreviewImg" src="" alt="Profile preview" style="display:none;" />
+                      <div id="photoPlaceholder" class="placeholder-img"><i class="fas fa-camera"></i></div>
+                    </div>
+                    <input class="input" id="foto_upload" type="file" accept="image/*" />
+                    <p class="helper-text">Upload a profile photo; it will be stored securely on Cloudinary.</p>
+                  </div>
+                  <input type="hidden" id="foto_url" />
+                </div>
+              </div>
+              <div class="modal-actions"><button class="btn btn-secondary" type="button" id="cancelBtn">Cancel</button><button class="btn btn-primary" type="submit" id="saveBtn">Save Profile</button></div>
+            </form>
+          </div>
+        </main>
+      </div>
+    </div>
+    <div id="toast" class="toast"></div>
+    <script src="./js/api.js"></script>
+    <script>
+      const userName = document.getElementById('userName');
+
+      function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2400);
+      }
+
+      async function ensureAuth() {
+        const token = sessionStorage.getItem('token');
+        if (!token) { window.location.href = './login.html'; return false; }
+        try {
+          const auth = await checkAuth();
+          if (!auth.authenticated) throw new Error('Session invalid');
+          const storedUser = JSON.parse(sessionStorage.getItem('user') || '{}');
+          if (userName) userName.textContent = storedUser.username || 'Admin';
+          return true;
+        } catch {
+          window.location.href = './login.html';
+          return false;
+        }
+      }
+
+      async function init() {
+        const ok = await ensureAuth();
+        if (!ok) return;
+        try {
+          const data = await loadProfiles();
+          const profile = data.data || {};
+          Object.entries(profile).forEach(([key, value]) => {
+            const el = document.getElementById(key);
+            if (!el || key === 'foto_url') return;
+            if (key === 'tanggal_lahir') {
+              if (!value) {
+                el.value = '';
+              } else {
+                // Normalize possible datetime string to YYYY-MM-DD
+                let dateStr = value;
+                if (typeof value === 'string' && value.indexOf(' ') !== -1) dateStr = value.split(' ')[0];
+                try { el.value = new Date(dateStr).toISOString().slice(0,10); } catch { el.value = dateStr; }
+              }
+            } else {
+              el.value = value ?? '';
+            }
+          });
+          const photoUrl = data.data?.foto_url;
+          const previewImg = document.getElementById('photoPreviewImg');
+          const placeholder = document.getElementById('photoPlaceholder');
+          if (photoUrl) {
+            previewImg.src = photoUrl;
+            previewImg.style.display = 'block';
+            placeholder.style.display = 'none';
+            document.getElementById('foto_url').value = photoUrl;
+          }
+        } catch (error) {
+          showToast(error.message);
+        }
+      }
+
+      const fileInput = document.getElementById('foto_upload');
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files[0];
+        const previewImg = document.getElementById('photoPreviewImg');
+        const placeholder = document.getElementById('photoPlaceholder');
+        if (file) {
+          previewImg.src = URL.createObjectURL(file);
+          previewImg.style.display = 'block';
+          placeholder.style.display = 'none';
+        }
+      });
+
+      document.getElementById('profileForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const saveBtn = document.getElementById('saveBtn');
+        const payload = {};
+        const file = fileInput.files[0];
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+        try {
+          if (file) {
+            const uploadResult = await uploadImage(file);
+            payload.foto_url = uploadResult.url;
+          } else {
+            payload.foto_url = document.getElementById('foto_url').value;
+          }
+
+          ['nama_lengkap','nama_panggilan','tempat_lahir','tanggal_lahir','email','telepon','universitas','fakultas','prodi','semester','alamat']
+            .forEach((key) => payload[key] = (document.getElementById(key) || {}).value || '');
+
+          await saveProfile(payload);
+          showToast('Profile saved');
+        } catch (error) {
+          showToast(error.message);
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Profile';
+        }
+      });
+
+      document.getElementById('cancelBtn').addEventListener('click', () => window.location.reload());
+      document.getElementById('logoutBtn').addEventListener('click', async () => { try { await logout(); } catch {} sessionStorage.clear(); window.location.href = './login.html'; });
+      init();
+    </script>
+  </body>
+</html>

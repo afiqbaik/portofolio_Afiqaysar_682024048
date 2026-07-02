@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio - Afiq Aysar Fajari</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="Frontend/utama/css/style.css" />
+  </head>
+  <body>
+    <nav id="navbar">
+      <a href="Frontend/admin/login.html" class="logo">Afiq.</a>
+      <ul id="navMenu">
+        <li><a href="#home" class="nav-link active">Home</a></li>
+        <li><a href="#about" class="nav-link">About</a></li>
+        <li><a href="#skills" class="nav-link">Skills</a></li>
+        <li><a href="#experience" class="nav-link">Experience</a></li>
+        <li><a href="#projects" class="nav-link">Projects</a></li>
+        <li><a href="#contact" class="nav-link">Contact</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation"><i class="fas fa-bars"></i></button>
+    </nav>
+
+    <section class="hero" id="home">
+      <div class="hero-content" id="hero-content">
+        <div class="loading-skeleton">Loading profile...</div>
+      </div>
+    </section>
+
+    <section id="about">
+      <h2 class="section-title">About Me</h2>
+      <div class="about-content">
+        <div class="about-img">
+          <img id="profile-photo" src="" alt="Profile photo" style="display:none; width:100%; border-radius:50%;" />
+          <div class="placeholder-img" id="photo-placeholder"><i class="fas fa-user"></i></div>
+        </div>
+        <div class="about-text" id="about-text"></div>
+      </div>
+    </section>
+
+    <section id="skills" class="bg-white">
+      <h2 class="section-title">Skills</h2>
+      <div class="skills-grid" id="skills-container"></div>
+    </section>
+
+    <section id="experience">
+      <h2 class="section-title">Experience</h2>
+      <div class="timeline" id="experience-container"></div>
+    </section>
+
+    <section id="projects" class="bg-white">
+      <h2 class="section-title">My Projects</h2>
+      <div class="projects-grid" id="projects-container"></div>
+    </section>
+
+    <section id="contact">
+      <h2 class="section-title">Contact Me</h2>
+      <div class="contact-container">
+        <p id="contact-email-display">Loading contact data...</p>
+        <form class="contact-form" id="contactForm">
+          <input type="text" id="contactName" placeholder="Your name" required />
+          <input type="email" id="contactEmail" placeholder="Your email" required />
+          <textarea id="contactMessage" placeholder="Your message" required></textarea>
+          <button type="submit" class="btn" id="sendBtn">Send Message</button>
+        </form>
+      </div>
+    </section>
+
+    <footer>
+      <p>&copy; <span id="current-year"></span> Afiq Aysar Fajari. All Rights Reserved.</p>
+    </footer>
+
+    <script src="Frontend/admin/js/api.js"></script>
+    <script src="Frontend/utama/js/script.js"></script>
+  </body>
+</html>

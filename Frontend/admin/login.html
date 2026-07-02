@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Login | Portfolio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/palette.css" />
+  </head>
+  <body class="login-page">
+    <div class="auth-card">
+      <div class="brand">
+        <div class="brand-badge">AF</div>
+        <div>
+          <h1>Welcome back</h1>
+          <p>Sign in to manage your portfolio</p>
+        </div>
+      </div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="label" for="username">Username</label>
+          <input class="input" id="username" name="username" autocomplete="username" required />
+        </div>
+        <div class="form-group">
+          <label class="label" for="password">Password</label>
+          <input class="input" id="password" name="password" type="password" autocomplete="current-password" required />
+        </div>
+        <div class="checkbox-row">
+          <label><input type="checkbox" id="remember" /> Remember me</label>
+          <a href="#">Forgot password</a>
+        </div>
+        <div class="form-group" style="margin-top:16px;">
+          <button class="btn btn-primary" type="submit" id="loginBtn">Sign In</button>
+        </div>
+      </form>
+      <div id="statusText" class="error-state" style="margin-top:16px;display:none"></div>
+    </div>
+    <div id="toast" class="toast"></div>
+    <script src="./js/api.js"></script>
+    <script>
+      const loginForm = document.getElementById('loginForm');
+      const statusText = document.getElementById('statusText');
+      const loginBtn = document.getElementById('loginBtn');
+      function showToast(message, isError = false) { const toast = document.getElementById('toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 2400); }
+      loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        statusText.style.display = 'none';
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Signing in...';
+        try {
+          const result = await login(username, password);
+          sessionStorage.setItem('token', result.token);
+          sessionStorage.setItem('user', JSON.stringify(result.user));
+          showToast('Login successful');
+          setTimeout(()=>window.location.href='./dashboard.html', 300);
+        } catch (error) {
+          statusText.textContent = error.message || 'Login failed';
+          statusText.style.display = 'block';
+          showToast(error.message || 'Login failed', true);
+        } finally {
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Sign In';
+        }
+      });
+    </script>
+  </body>
+</html>

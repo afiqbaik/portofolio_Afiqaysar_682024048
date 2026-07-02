@@ -1,0 +1,33 @@
+:root{
+  --primary: #D96B4A;
+  --primary-dark: #B7492E;
+  --accent: #FFD7C5;
+  --bg: #FBF7F5;
+  --text: #4B3A33;
+  --muted: #8C766C;
+  --border: #efe6df;
+}
+
+
+.input:focus,.textarea:focus,.select:focus{
+  border-color:var(--primary) !important;
+  box-shadow:0 0 0 4px rgba(217,107,74,0.09) !important;
+}
+
+.btn-primary{
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark)) !important;
+  color:#fff !important;
+}
+
+.btn-primary:hover{
+  background:var(--primary-dark) !important;
+  box-shadow:0 8px 24px rgba(183,73,46,0.16) !important;
+}
+
+.brand-badge{
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark)) !important;
+}
+
+.bg-accent{
+  background:linear-gradient(135deg,var(--accent),var(--primary)) !important;
+}
