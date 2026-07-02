@@ -35,7 +35,6 @@
             <div class="form-group"><label class="label">Title</label><input class="input" id="judul" required /></div>
             <div class="form-group"><label class="label">Image URL</label><input class="input" id="gambar_url" /></div>
             <div class="form-group"><label class="label">Demo Link</label><input class="input" id="link_project" /></div>
-            <div class="form-group"><label class="label">GitHub URL</label><input class="input" id="github_url" /></div>
           </div>
           <div class="form-group"><label class="label">Description</label><textarea class="textarea" id="deskripsi" style="min-height:110px"></textarea></div>
           <div class="modal-actions"><button class="btn btn-secondary" type="button" id="cancelFormBtn">Cancel</button><button class="btn btn-primary" type="submit" id="saveBtn">Save</button></div>
@@ -62,7 +61,7 @@
 
       function showToast(message) { const toast = document.getElementById('toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2400); }
       function closeModal() { modalBackdrop.classList.remove('open'); document.getElementById('projectForm').reset(); document.getElementById('projectId').value = ''; projectState.selectedId = null; }
-      function openModal(item) { document.getElementById('modalTitle').textContent = item ? 'Edit Project' : 'New Project'; if (item) { document.getElementById('projectId').value = item.id; document.getElementById('judul').value = item.judul || ''; document.getElementById('deskripsi').value = item.deskripsi || ''; document.getElementById('gambar_url').value = item.gambar_url || ''; document.getElementById('link_project').value = item.link_project || ''; document.getElementById('github_url').value = item.github_url || ''; } modalBackdrop.classList.add('open'); }
+      function openModal(item) { document.getElementById('modalTitle').textContent = item ? 'Edit Project' : 'New Project'; if (item) { document.getElementById('projectId').value = item.id; document.getElementById('judul').value = item.judul || ''; document.getElementById('deskripsi').value = item.deskripsi || ''; document.getElementById('gambar_url').value = item.gambar_url || ''; document.getElementById('link_project').value = item.link_project || ''; } modalBackdrop.classList.add('open'); }
       function closeDelete() { deleteBackdrop.classList.remove('open'); projectState.selectedId = null; }
       function openDelete(id) { projectState.selectedId = id; deleteBackdrop.classList.add('open'); }
 
@@ -81,7 +80,7 @@
       document.getElementById('cancelDeleteBtn').addEventListener('click', closeDelete);
       document.getElementById('confirmDeleteBtn').addEventListener('click', async () => { const id = projectState.selectedId; if (!id) return; try { await deleteProject(id); showToast('Project deleted'); closeDelete(); await loadData(); } catch (error) { showToast(error.message); } });
 
-      document.getElementById('projectForm').addEventListener('submit', async (event) => { event.preventDefault(); const saveBtn = document.getElementById('saveBtn'); const payload = { judul: document.getElementById('judul').value, deskripsi: document.getElementById('deskripsi').value, gambar_url: document.getElementById('gambar_url').value, link_project: document.getElementById('link_project').value, github_url: document.getElementById('github_url').value }; saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; try { const id = document.getElementById('projectId').value; if (id) { await updateProject(id, payload); } else { await saveProject(payload); } showToast('Project saved'); closeModal(); await loadData(); } catch (error) { showToast(error.message); } finally { saveBtn.disabled = false; saveBtn.textContent = 'Save'; } });
+      document.getElementById('projectForm').addEventListener('submit', async (event) => { event.preventDefault(); const saveBtn = document.getElementById('saveBtn'); const payload = { judul: document.getElementById('judul').value, deskripsi: document.getElementById('deskripsi').value, gambar_url: document.getElementById('gambar_url').value, link_project: document.getElementById('link_project').value }; saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; try { const id = document.getElementById('projectId').value; if (id) { await updateProject(id, payload); } else { await saveProject(payload); } showToast('Project saved'); closeModal(); await loadData(); } catch (error) { showToast(error.message); } finally { saveBtn.disabled = false; saveBtn.textContent = 'Save'; } });
 
       document.getElementById('cancelFormBtn').addEventListener('click', closeModal);
       document.getElementById('logoutBtn').addEventListener('click', async () => { try { await logout(); } catch { } sessionStorage.clear(); window.location.href = './login.html'; });
